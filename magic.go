@@ -40,22 +40,31 @@ type Result struct {
 	NeedBytes int
 }
 
+// Format values reported in Result.Format.
 const (
-	formatText  = "text"
-	formatHTML  = "html"
-	formatXML   = "xml"
-	formatSVG   = "svg"
-	formatZIP   = "zip"
-	formatTAR   = "tar"
-	formatGZIP  = "gzip"
-	formatBZIP2 = "bzip2"
-	formatXZ    = "xz"
-	formatPDF   = "pdf"
-	formatCFBF  = "cfbf"
-	formatPNG   = "png"
-	formatJPEG  = "jpeg"
-	formatGIF   = "gif"
+	FormatText  = "text"
+	FormatHTML  = "html"
+	FormatXML   = "xml"
+	FormatSVG   = "svg"
+	FormatZIP   = "zip"
+	FormatTAR   = "tar"
+	FormatGZIP  = "gzip"
+	FormatBZIP2 = "bzip2"
+	FormatXZ    = "xz"
+	FormatZstd  = "zstd"
+	FormatPDF   = "pdf"
+	FormatCFBF  = "cfbf"
+	FormatPNG   = "png"
+	FormatJPEG  = "jpeg"
+	FormatGIF   = "gif"
+	FormatELF   = "elf"
+	FormatMachO = "mach-o"
+	FormatPE    = "pe"
+	FormatWASM  = "wasm"
+	FormatAR    = "ar"
+)
 
+const (
 	mimeText  = "text/plain"
 	mimeHTML  = "text/html"
 	mimeXML   = "text/xml"
@@ -70,6 +79,12 @@ const (
 	mimePNG   = "image/png"
 	mimeJPEG  = "image/jpeg"
 	mimeGIF   = "image/gif"
+	mimeZstd  = "application/zstd"
+	mimeELF   = "application/x-elf"
+	mimeMachO = "application/x-mach-binary"
+	mimePE    = "application/vnd.microsoft.portable-executable"
+	mimeWASM  = "application/wasm"
+	mimeAR    = "application/x-archive"
 
 	encodingUTF8    = "utf-8"
 	encodingUTF16LE = "utf-16le"
@@ -107,7 +122,7 @@ func detect(data []byte, prefix bool) Result {
 		result.Format = format
 		result.MIME = mime
 	} else if result.Kind == KindText {
-		result.Format = formatText
+		result.Format = FormatText
 		result.MIME = mimeText
 	}
 

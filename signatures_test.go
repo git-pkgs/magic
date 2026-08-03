@@ -19,21 +19,33 @@ func TestBinaryFormatRegistry(t *testing.T) {
 		format string
 		mime   string
 	}{
-		{name: "ZIP local record", input: []byte("PK\x03\x04"), format: formatZIP, mime: mimeZIP},
-		{name: "ZIP empty archive", input: []byte("PK\x05\x06"), format: formatZIP, mime: mimeZIP},
-		{name: "ZIP spanning record", input: []byte("PK\x07\x08"), format: formatZIP, mime: mimeZIP},
-		{name: "TAR archive", input: tarData, format: formatTAR, mime: mimeTAR},
-		{name: "GNU TAR archive", input: gnuTARData, format: formatTAR, mime: mimeTAR},
-		{name: "signed checksum TAR archive", input: signedTARData, format: formatTAR, mime: mimeTAR},
-		{name: "gzip stream", input: []byte("\x1f\x8b\x08"), format: formatGZIP, mime: mimeGZIP},
-		{name: "bzip2 stream", input: []byte("BZh9"), format: formatBZIP2, mime: mimeBZIP2},
-		{name: "xz stream", input: []byte("\xfd7zXZ\x00"), format: formatXZ, mime: mimeXZ},
-		{name: "PDF document", input: []byte("%PDF-1.7"), format: formatPDF, mime: mimePDF},
-		{name: "CFBF document", input: []byte("\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"), format: formatCFBF, mime: mimeCFBF},
-		{name: "PNG image", input: []byte("\x89PNG\r\n\x1a\n"), format: formatPNG, mime: mimePNG},
-		{name: "JPEG image", input: []byte("\xff\xd8\xff\xe0"), format: formatJPEG, mime: mimeJPEG},
-		{name: "GIF87a image", input: []byte("GIF87a"), format: formatGIF, mime: mimeGIF},
-		{name: "GIF89a image", input: []byte("GIF89a"), format: formatGIF, mime: mimeGIF},
+		{name: "ZIP local record", input: []byte("PK\x03\x04"), format: FormatZIP, mime: mimeZIP},
+		{name: "ZIP empty archive", input: []byte("PK\x05\x06"), format: FormatZIP, mime: mimeZIP},
+		{name: "ZIP spanning record", input: []byte("PK\x07\x08"), format: FormatZIP, mime: mimeZIP},
+		{name: "TAR archive", input: tarData, format: FormatTAR, mime: mimeTAR},
+		{name: "GNU TAR archive", input: gnuTARData, format: FormatTAR, mime: mimeTAR},
+		{name: "signed checksum TAR archive", input: signedTARData, format: FormatTAR, mime: mimeTAR},
+		{name: "gzip stream", input: []byte("\x1f\x8b\x08"), format: FormatGZIP, mime: mimeGZIP},
+		{name: "bzip2 stream", input: []byte("BZh9"), format: FormatBZIP2, mime: mimeBZIP2},
+		{name: "xz stream", input: []byte("\xfd7zXZ\x00"), format: FormatXZ, mime: mimeXZ},
+		{name: "PDF document", input: []byte("%PDF-1.7"), format: FormatPDF, mime: mimePDF},
+		{name: "CFBF document", input: []byte("\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"), format: FormatCFBF, mime: mimeCFBF},
+		{name: "PNG image", input: []byte("\x89PNG\r\n\x1a\n"), format: FormatPNG, mime: mimePNG},
+		{name: "JPEG image", input: []byte("\xff\xd8\xff\xe0"), format: FormatJPEG, mime: mimeJPEG},
+		{name: "GIF87a image", input: []byte("GIF87a"), format: FormatGIF, mime: mimeGIF},
+		{name: "GIF89a image", input: []byte("GIF89a"), format: FormatGIF, mime: mimeGIF},
+		{name: "zstd frame", input: []byte("\x28\xb5\x2f\xfd"), format: FormatZstd, mime: mimeZstd},
+		{name: "ELF object", input: []byte("\x7fELF\x02\x01\x01"), format: FormatELF, mime: mimeELF},
+		{name: "Mach-O 64 LE", input: []byte("\xcf\xfa\xed\xfe"), format: FormatMachO, mime: mimeMachO},
+		{name: "Mach-O 32 LE", input: []byte("\xce\xfa\xed\xfe"), format: FormatMachO, mime: mimeMachO},
+		{name: "Mach-O 64 BE", input: []byte("\xfe\xed\xfa\xcf"), format: FormatMachO, mime: mimeMachO},
+		{name: "Mach-O 32 BE", input: []byte("\xfe\xed\xfa\xce"), format: FormatMachO, mime: mimeMachO},
+		{name: "Mach-O universal 64", input: []byte("\xca\xfe\xba\xbf\x00\x00\x00\x02"), format: FormatMachO, mime: mimeMachO},
+		{name: "Mach-O universal 32", input: []byte("\xca\xfe\xba\xbe\x00\x00\x00\x02"), format: FormatMachO, mime: mimeMachO},
+		{name: "WASM module", input: []byte("\x00asm\x01\x00\x00\x00"), format: FormatWASM, mime: mimeWASM},
+		{name: "ar archive", input: []byte("!<arch>\n"), format: FormatAR, mime: mimeAR},
+		{name: "PE executable", input: makePE(0x40), format: FormatPE, mime: mimePE},
+		{name: "PE at sniff boundary", input: makePE(sniffLength - peSignatureLen), format: FormatPE, mime: mimePE},
 	}
 
 	for _, test := range tests {
@@ -56,15 +68,20 @@ func TestTruncatedBinarySignaturesDoNotMatch(t *testing.T) {
 		signature []byte
 		format    string
 	}{
-		{name: "ZIP record", signature: []byte("PK\x03\x04"), format: formatZIP},
-		{name: "gzip stream", signature: []byte("\x1f\x8b\x08"), format: formatGZIP},
-		{name: "bzip2 stream", signature: []byte("BZh1"), format: formatBZIP2},
-		{name: "xz stream", signature: []byte("\xfd7zXZ\x00"), format: formatXZ},
-		{name: "PDF document", signature: []byte("%PDF-"), format: formatPDF},
-		{name: "CFBF document", signature: []byte("\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"), format: formatCFBF},
-		{name: "PNG image", signature: []byte("\x89PNG\r\n\x1a\n"), format: formatPNG},
-		{name: "JPEG image", signature: []byte("\xff\xd8\xff"), format: formatJPEG},
-		{name: "GIF image", signature: []byte("GIF89a"), format: formatGIF},
+		{name: "ZIP record", signature: []byte("PK\x03\x04"), format: FormatZIP},
+		{name: "gzip stream", signature: []byte("\x1f\x8b\x08"), format: FormatGZIP},
+		{name: "bzip2 stream", signature: []byte("BZh1"), format: FormatBZIP2},
+		{name: "xz stream", signature: []byte("\xfd7zXZ\x00"), format: FormatXZ},
+		{name: "PDF document", signature: []byte("%PDF-"), format: FormatPDF},
+		{name: "CFBF document", signature: []byte("\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"), format: FormatCFBF},
+		{name: "PNG image", signature: []byte("\x89PNG\r\n\x1a\n"), format: FormatPNG},
+		{name: "JPEG image", signature: []byte("\xff\xd8\xff"), format: FormatJPEG},
+		{name: "GIF image", signature: []byte("GIF89a"), format: FormatGIF},
+		{name: "zstd frame", signature: []byte("\x28\xb5\x2f\xfd"), format: FormatZstd},
+		{name: "ELF object", signature: []byte("\x7fELF"), format: FormatELF},
+		{name: "Mach-O 64 LE", signature: []byte("\xcf\xfa\xed\xfe"), format: FormatMachO},
+		{name: "WASM module", signature: []byte("\x00asm"), format: FormatWASM},
+		{name: "ar archive", signature: []byte("!<arch>\n"), format: FormatAR},
 	}
 
 	for _, test := range tests {
@@ -83,6 +100,61 @@ func TestTruncatedBinarySignaturesDoNotMatch(t *testing.T) {
 	}
 }
 
+func TestPEHeaderBounds(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		input []byte
+	}{
+		{name: "MZ without DOS header", input: []byte("MZ")},
+		{name: "MZ with zero e_lfanew", input: makePE(0)},
+		{name: "e_lfanew inside DOS header", input: makePE(peHeaderOffsetAt)},
+		{name: "e_lfanew past sniff window", input: makePE(sniffLength)},
+		{name: "e_lfanew past data", input: makePE(0x80)[:0x80]},
+		{name: "MZ without PE signature", input: bytes.Repeat([]byte("MZ"), 0x40)},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			if got := Detect(test.input); got.Format == FormatPE {
+				t.Fatalf("Detect() = %#v, want non-PE", got)
+			}
+		})
+	}
+
+	if got := DetectPrefix(makePE(0x80)[:0x40]); got.Reason != ReasonNeedMore {
+		t.Fatalf("DetectPrefix on truncated PE reason = %q, want %q", got.Reason, ReasonNeedMore)
+	}
+}
+
+func TestMachOFatIsNotJavaClass(t *testing.T) {
+	t.Parallel()
+
+	// Java class file: CA FE BA BE, minor 0, major 52 (Java 8).
+	class := []byte("\xca\xfe\xba\xbe\x00\x00\x00\x34")
+	if got := Detect(class); got.Format == FormatMachO {
+		t.Fatalf("Java class file matched as Mach-O: %#v", got)
+	}
+
+	// Zero-arch fat header is not a valid universal binary.
+	empty := []byte("\xca\xfe\xba\xbe\x00\x00\x00\x00")
+	if got := Detect(empty); got.Format == FormatMachO {
+		t.Fatalf("zero-arch fat header matched as Mach-O: %#v", got)
+	}
+
+	// Byte-swapped magic is not a valid on-disk fat header.
+	swapped := []byte("\xbe\xba\xfe\xca\x02\x00\x00\x00")
+	if got := Detect(swapped); got.Format == FormatMachO {
+		t.Fatalf("byte-swapped fat magic matched as Mach-O: %#v", got)
+	}
+
+	if got := DetectPrefix([]byte("\xca\xfe\xba\xbe")); got.Reason != ReasonNeedMore {
+		t.Fatalf("bare CA FE BA BE reason = %q, want %q", got.Reason, ReasonNeedMore)
+	}
+}
+
 func TestTARRequiresMagicAndChecksum(t *testing.T) {
 	t.Parallel()
 
@@ -90,19 +162,19 @@ func TestTARRequiresMagicAndChecksum(t *testing.T) {
 
 	badChecksum := bytes.Clone(valid)
 	badChecksum[0] ^= 1
-	if got := Detect(badChecksum); got.Format == formatTAR {
+	if got := Detect(badChecksum); got.Format == FormatTAR {
 		t.Fatal("changed TAR header matched")
 	}
 
 	invalidChecksum := bytes.Clone(valid)
 	invalidChecksum[tarChecksumFrom] = 'x'
-	if got := Detect(invalidChecksum); got.Format == formatTAR {
+	if got := Detect(invalidChecksum); got.Format == FormatTAR {
 		t.Fatal("non-octal TAR checksum matched")
 	}
 
 	magicOnly := make([]byte, sniffLength)
 	copy(magicOnly[tarMagicOffset:], "ustar\x00")
-	if got := Detect(magicOnly); got.Format == formatTAR {
+	if got := Detect(magicOnly); got.Format == FormatTAR {
 		t.Fatal("bare ustar marker matched")
 	}
 
@@ -134,15 +206,15 @@ func TestTextFormatRegistryAndPrecedence(t *testing.T) {
 		format string
 		mime   string
 	}{
-		{name: "HTML mixed case", input: " \n<hTmL>", format: formatHTML, mime: mimeHTML},
-		{name: "HTML comment without terminator", input: "<!--comment", format: formatHTML, mime: mimeHTML},
-		{name: "XML document", input: "\t<?xml version=\"1.0\"?><root/>", format: formatXML, mime: mimeXML},
-		{name: "SVG root", input: " <svg>", format: formatSVG, mime: mimeSVG},
-		{name: "SVG after declaration", input: "<?xml version=\"1.0\"?>\n<svg >", format: formatSVG, mime: mimeSVG},
-		{name: "XML wins with comment before SVG", input: "<?xml version=\"1.0\"?>\n<!-- made by tool --><svg>", format: formatXML, mime: mimeXML},
-		{name: "XML wins with doctype before SVG", input: "<?xml version=\"1.0\"?>\n<!DOCTYPE svg><svg>", format: formatXML, mime: mimeXML},
-		{name: "HTML comment wins without declaration", input: "<!-- made by tool --><svg>", format: formatHTML, mime: mimeHTML},
-		{name: "SVG doctype is plain text", input: "<!DOCTYPE svg><svg>", format: formatText, mime: mimeText},
+		{name: "HTML mixed case", input: " \n<hTmL>", format: FormatHTML, mime: mimeHTML},
+		{name: "HTML comment without terminator", input: "<!--comment", format: FormatHTML, mime: mimeHTML},
+		{name: "XML document", input: "\t<?xml version=\"1.0\"?><root/>", format: FormatXML, mime: mimeXML},
+		{name: "SVG root", input: " <svg>", format: FormatSVG, mime: mimeSVG},
+		{name: "SVG after declaration", input: "<?xml version=\"1.0\"?>\n<svg >", format: FormatSVG, mime: mimeSVG},
+		{name: "XML wins with comment before SVG", input: "<?xml version=\"1.0\"?>\n<!-- made by tool --><svg>", format: FormatXML, mime: mimeXML},
+		{name: "XML wins with doctype before SVG", input: "<?xml version=\"1.0\"?>\n<!DOCTYPE svg><svg>", format: FormatXML, mime: mimeXML},
+		{name: "HTML comment wins without declaration", input: "<!-- made by tool --><svg>", format: FormatHTML, mime: mimeHTML},
+		{name: "SVG doctype is plain text", input: "<!DOCTYPE svg><svg>", format: FormatText, mime: mimeText},
 	}
 
 	for _, test := range tests {
@@ -163,13 +235,13 @@ func TestTextSignatureMetadataSurvivesClassification(t *testing.T) {
 	assertResult(t, Detect([]byte("<html>\xff")), Result{
 		Kind:   KindUnknown,
 		MIME:   mimeHTML,
-		Format: formatHTML,
+		Format: FormatHTML,
 		Reason: ReasonInvalidText,
 	})
 	assertResult(t, Detect([]byte("<html>\x01")), Result{
 		Kind:   KindBinary,
 		MIME:   mimeHTML,
-		Format: formatHTML,
+		Format: FormatHTML,
 	})
 }
 
@@ -189,7 +261,7 @@ func TestTextSignatureBoundaries(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			got := Detect([]byte(test.input))
-			if got.Format != formatText || got.MIME != mimeText {
+			if got.Format != FormatText || got.MIME != mimeText {
 				t.Fatalf("Detect(%q) = %#v, want plain text", test.input, got)
 			}
 		})
@@ -197,14 +269,32 @@ func TestTextSignatureBoundaries(t *testing.T) {
 
 	input := append(bytes.Repeat([]byte{' '}, sniffLength), []byte("<html>")...)
 	got := Detect(input)
-	if got.Format != formatText || got.MIME != mimeText {
+	if got.Format != FormatText || got.MIME != mimeText {
 		t.Fatalf("signature after sniff window matched: %#v", got)
 	}
 
 	got = Detect([]byte("<?xml version=\"1.0\"<svg>"))
-	if got.Format != formatXML || got.MIME != mimeXML {
+	if got.Format != FormatXML || got.MIME != mimeXML {
 		t.Fatalf("unterminated XML declaration = %#v, want XML", got)
 	}
+}
+
+func makePE(peOffset int) []byte {
+	size := peOffset + peSignatureLen
+	if size < peHeaderOffsetAt+4 {
+		size = peHeaderOffsetAt + 4
+	}
+	data := make([]byte, size)
+	data[0] = 'M'
+	data[1] = 'Z'
+	data[peHeaderOffsetAt] = byte(peOffset)
+	data[peHeaderOffsetAt+1] = byte(peOffset >> 8)
+	data[peHeaderOffsetAt+2] = byte(peOffset >> 16)
+	data[peHeaderOffsetAt+3] = byte(peOffset >> 24)
+	if peOffset >= peHeaderOffsetAt+4 && peOffset+peSignatureLen <= len(data) {
+		copy(data[peOffset:], "PE\x00\x00")
+	}
+	return data
 }
 
 func makeTAR(t testing.TB) []byte {

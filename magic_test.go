@@ -24,7 +24,7 @@ func TestDetectPrefix(t *testing.T) {
 			expect: Result{
 				Kind:     KindText,
 				MIME:     mimeText,
-				Format:   formatText,
+				Format:   FormatText,
 				Encoding: encodingUTF8,
 				Reason:   ReasonNeedMore,
 			},
@@ -43,7 +43,7 @@ func TestDetectPrefix(t *testing.T) {
 			expect: Result{
 				Kind:   KindBinary,
 				MIME:   mimePNG,
-				Format: formatPNG,
+				Format: FormatPNG,
 			},
 		},
 		{
@@ -124,7 +124,7 @@ func TestDetectDoesNotRetainInput(t *testing.T) {
 	assertResult(t, got, Result{
 		Kind:     KindText,
 		MIME:     mimeText,
-		Format:   formatText,
+		Format:   FormatText,
 		Encoding: encodingUTF8,
 	})
 }

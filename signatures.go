@@ -7,6 +7,8 @@
 
 package magic
 
+import "encoding/binary"
+
 const (
 	// sniffLength is the furthest byte inspected by any signature. A binary
 	// rule that reads beyond it must also update prefixResultCanChange.
@@ -17,6 +19,20 @@ const (
 	tarChecksumTo   = 156
 	xmlCloseLength  = 2
 	octalBase       = 8
+
+	// peHeaderOffsetAt is the location of the uint32le e_lfanew field in the
+	// DOS header, which holds the offset of the "PE\0\0" signature.
+	peHeaderOffsetAt = 0x3c
+	peSignatureLen   = 4
+
+	// machOFatArchLimit separates a Mach-O universal binary from a Java
+	// class file, which share the CA FE BA BE prefix. Bytes 4-7 are the
+	// big-endian architecture count in a fat header and (minor||major)
+	// version in a class file; the class-file major version has been at
+	// least 45 since JDK 1.0.2 while no fat binary approaches that many
+	// architectures.
+	machOFatHeaderLen = 8
+	machOFatArchLimit = 40
 )
 
 var htmlSignatures = [...]string{
@@ -43,30 +59,75 @@ func binaryFormat(data []byte) (format, mime string) {
 	case hasPrefix(data, "PK\x03\x04"),
 		hasPrefix(data, "PK\x05\x06"),
 		hasPrefix(data, "PK\x07\x08"):
-		return formatZIP, mimeZIP
+		return FormatZIP, mimeZIP
 	case hasPrefix(data, "\x1f\x8b\x08"):
-		return formatGZIP, mimeGZIP
+		return FormatGZIP, mimeGZIP
 	case len(data) >= 4 &&
 		hasPrefix(data, "BZh") &&
 		data[3] >= '1' && data[3] <= '9':
-		return formatBZIP2, mimeBZIP2
+		return FormatBZIP2, mimeBZIP2
 	case hasPrefix(data, "\xfd7zXZ\x00"):
-		return formatXZ, mimeXZ
+		return FormatXZ, mimeXZ
 	case hasPrefix(data, "%PDF-"):
-		return formatPDF, mimePDF
+		return FormatPDF, mimePDF
 	case hasPrefix(data, "\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"):
-		return formatCFBF, mimeCFBF
+		return FormatCFBF, mimeCFBF
 	case hasPrefix(data, "\x89PNG\r\n\x1a\n"):
-		return formatPNG, mimePNG
+		return FormatPNG, mimePNG
 	case hasPrefix(data, "\xff\xd8\xff"):
-		return formatJPEG, mimeJPEG
+		return FormatJPEG, mimeJPEG
 	case hasPrefix(data, "GIF87a"), hasPrefix(data, "GIF89a"):
-		return formatGIF, mimeGIF
+		return FormatGIF, mimeGIF
+	case hasPrefix(data, "\x28\xb5\x2f\xfd"):
+		return FormatZstd, mimeZstd
+	case hasPrefix(data, "\x7fELF"):
+		return FormatELF, mimeELF
+	case hasPrefix(data, "\xcf\xfa\xed\xfe"),
+		hasPrefix(data, "\xce\xfa\xed\xfe"),
+		hasPrefix(data, "\xfe\xed\xfa\xcf"),
+		hasPrefix(data, "\xfe\xed\xfa\xce"):
+		return FormatMachO, mimeMachO
+	case machOFatHeader(data):
+		return FormatMachO, mimeMachO
+	case hasPrefix(data, "\x00asm"):
+		return FormatWASM, mimeWASM
+	case hasPrefix(data, "!<arch>\n"):
+		return FormatAR, mimeAR
+	case peHeader(data):
+		return FormatPE, mimePE
 	case validTARHeader(data):
-		return formatTAR, mimeTAR
+		return FormatTAR, mimeTAR
 	default:
 		return "", ""
 	}
+}
+
+func machOFatHeader(data []byte) bool {
+	if len(data) < machOFatHeaderLen {
+		return false
+	}
+	// Fat headers are always big-endian on disk per mach-o/fat.h; FAT_CIGAM
+	// is a memory-order constant, not an alternative on-disk signature.
+	if !hasPrefix(data, "\xca\xfe\xba\xbe") &&
+		!hasPrefix(data, "\xca\xfe\xba\xbf") {
+		return false
+	}
+	nfat := binary.BigEndian.Uint32(data[4:machOFatHeaderLen])
+	return nfat > 0 && nfat < machOFatArchLimit
+}
+
+func peHeader(data []byte) bool {
+	if !hasPrefix(data, "MZ") || len(data) < peHeaderOffsetAt+4 {
+		return false
+	}
+	offset := binary.LittleEndian.Uint32(data[peHeaderOffsetAt:])
+	// Bound to sniffLength so prefixResultCanChange stays correct. PE files
+	// with a DOS stub larger than the sniff window are not recognised.
+	if offset < peHeaderOffsetAt+4 || offset > sniffLength-peSignatureLen ||
+		int(offset)+peSignatureLen > len(data) {
+		return false
+	}
+	return hasPrefix(data[offset:], "PE\x00\x00")
 }
 
 func textFormat(data []byte) (format, mime string) {
@@ -76,13 +137,13 @@ func textFormat(data []byte) (format, mime string) {
 
 	first := skipWhitespace(data, 0)
 	if isSVG(data, first) {
-		return formatSVG, mimeSVG
+		return FormatSVG, mimeSVG
 	}
 	if hasPrefix(data[first:], "<?xml") {
-		return formatXML, mimeXML
+		return FormatXML, mimeXML
 	}
 	if isHTML(data, first) {
-		return formatHTML, mimeHTML
+		return FormatHTML, mimeHTML
 	}
 	return "", ""
 }

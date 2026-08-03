@@ -16,7 +16,7 @@ func TestTextDecisionTable(t *testing.T) {
 			expect: Result{
 				Kind:   KindText,
 				MIME:   mimeText,
-				Format: formatText,
+				Format: FormatText,
 			},
 		},
 		{
@@ -25,7 +25,7 @@ func TestTextDecisionTable(t *testing.T) {
 			expect: Result{
 				Kind:     KindText,
 				MIME:     mimeText,
-				Format:   formatText,
+				Format:   FormatText,
 				Encoding: encodingUTF8,
 			},
 		},
@@ -35,7 +35,7 @@ func TestTextDecisionTable(t *testing.T) {
 			expect: Result{
 				Kind:     KindText,
 				MIME:     mimeText,
-				Format:   formatText,
+				Format:   FormatText,
 				Encoding: encodingUTF16LE,
 			},
 		},
@@ -45,7 +45,7 @@ func TestTextDecisionTable(t *testing.T) {
 			expect: Result{
 				Kind:     KindText,
 				MIME:     mimeText,
-				Format:   formatText,
+				Format:   FormatText,
 				Encoding: encodingUTF16BE,
 			},
 		},
@@ -80,7 +80,7 @@ func TestTextDecisionTable(t *testing.T) {
 			expect: Result{
 				Kind:     KindText,
 				MIME:     mimeText,
-				Format:   formatText,
+				Format:   FormatText,
 				Encoding: encodingUTF8,
 			},
 		},
@@ -118,7 +118,7 @@ func TestUTF16Validation(t *testing.T) {
 			expect: Result{
 				Kind:     KindText,
 				MIME:     mimeText,
-				Format:   formatText,
+				Format:   FormatText,
 				Encoding: encodingUTF16LE,
 			},
 		},
@@ -128,7 +128,7 @@ func TestUTF16Validation(t *testing.T) {
 			expect: Result{
 				Kind:     KindText,
 				MIME:     mimeText,
-				Format:   formatText,
+				Format:   FormatText,
 				Encoding: encodingUTF16LE,
 			},
 		},
@@ -185,7 +185,7 @@ func TestPlainText(t *testing.T) {
 			assertResult(t, Detect(test.input), Result{
 				Kind:     KindText,
 				MIME:     mimeText,
-				Format:   formatText,
+				Format:   FormatText,
 				Encoding: encodingUTF8,
 			})
 		})
