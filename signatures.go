@@ -106,17 +106,13 @@ func machOFatHeader(data []byte) bool {
 	if len(data) < machOFatHeaderLen {
 		return false
 	}
-	var nfat uint32
-	switch {
-	case hasPrefix(data, "\xca\xfe\xba\xbe"),
-		hasPrefix(data, "\xca\xfe\xba\xbf"):
-		nfat = binary.BigEndian.Uint32(data[4:machOFatHeaderLen])
-	case hasPrefix(data, "\xbe\xba\xfe\xca"),
-		hasPrefix(data, "\xbf\xba\xfe\xca"):
-		nfat = binary.LittleEndian.Uint32(data[4:machOFatHeaderLen])
-	default:
+	// Fat headers are always big-endian on disk per mach-o/fat.h; FAT_CIGAM
+	// is a memory-order constant, not an alternative on-disk signature.
+	if !hasPrefix(data, "\xca\xfe\xba\xbe") &&
+		!hasPrefix(data, "\xca\xfe\xba\xbf") {
 		return false
 	}
+	nfat := binary.BigEndian.Uint32(data[4:machOFatHeaderLen])
 	return nfat > 0 && nfat < machOFatArchLimit
 }
 

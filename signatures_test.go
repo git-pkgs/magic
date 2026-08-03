@@ -42,8 +42,6 @@ func TestBinaryFormatRegistry(t *testing.T) {
 		{name: "Mach-O 32 BE", input: []byte("\xfe\xed\xfa\xce"), format: FormatMachO, mime: mimeMachO},
 		{name: "Mach-O universal 64", input: []byte("\xca\xfe\xba\xbf\x00\x00\x00\x02"), format: FormatMachO, mime: mimeMachO},
 		{name: "Mach-O universal 32", input: []byte("\xca\xfe\xba\xbe\x00\x00\x00\x02"), format: FormatMachO, mime: mimeMachO},
-		{name: "Mach-O universal 64 swapped", input: []byte("\xbf\xba\xfe\xca\x02\x00\x00\x00"), format: FormatMachO, mime: mimeMachO},
-		{name: "Mach-O universal 32 swapped", input: []byte("\xbe\xba\xfe\xca\x02\x00\x00\x00"), format: FormatMachO, mime: mimeMachO},
 		{name: "WASM module", input: []byte("\x00asm\x01\x00\x00\x00"), format: FormatWASM, mime: mimeWASM},
 		{name: "ar archive", input: []byte("!<arch>\n"), format: FormatAR, mime: mimeAR},
 		{name: "PE executable", input: makePE(0x40), format: FormatPE, mime: mimePE},
@@ -146,10 +144,10 @@ func TestMachOFatIsNotJavaClass(t *testing.T) {
 		t.Fatalf("zero-arch fat header matched as Mach-O: %#v", got)
 	}
 
-	// Byte-swapped magic with a big-endian count would be > 2^24 read LE.
-	swapped := []byte("\xbe\xba\xfe\xca\x00\x00\x00\x02")
+	// Byte-swapped magic is not a valid on-disk fat header.
+	swapped := []byte("\xbe\xba\xfe\xca\x02\x00\x00\x00")
 	if got := Detect(swapped); got.Format == FormatMachO {
-		t.Fatalf("swapped fat header with BE count matched as Mach-O: %#v", got)
+		t.Fatalf("byte-swapped fat magic matched as Mach-O: %#v", got)
 	}
 
 	if got := DetectPrefix([]byte("\xca\xfe\xba\xbe")); got.Reason != ReasonNeedMore {
