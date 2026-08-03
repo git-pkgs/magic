@@ -49,15 +49,20 @@ mutable package state.
 
 `Kind` is `text`, `binary`, or `unknown`. `Format` and `MIME` describe the
 physical content. `Encoding` is set for accepted UTF-8, UTF-16LE, or UTF-16BE
-text and never appears as a MIME charset parameter.
+text and never appears as a MIME charset parameter. Compare `Format` against
+the exported `Format*` constants rather than string literals.
 
-The first format registry contains:
+The format registry contains:
 
-- ZIP, TAR, gzip, bzip2, xz, PDF, CFBF, PNG, JPEG, and GIF
+- ZIP, TAR, ar, gzip, bzip2, xz, zstd, PDF, CFBF, PNG, JPEG, and GIF
+- ELF, Mach-O (thin and universal), PE/COFF, and WebAssembly
 - plain text, HTML, XML, and SVG
 
 Detection uses bytes only. ZIP-based package types such as JAR, wheel, and
-NuGet remain `zip`, and compressed payloads are not opened. A caller can
+NuGet remain `zip`, and compressed payloads are not opened. A `CA FE BA BE`
+prefix is reported as Mach-O only when the following architecture count is
+plausible, so Java class files fall through unclassified. PE requires the
+`PE\0\0` signature to be reachable within the first 512 bytes. A caller can
 combine the result with filename or domain rules when it needs a semantic
 type.
 
