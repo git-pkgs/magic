@@ -97,8 +97,8 @@ go test -run '^$' -bench . -benchmem
 Fixed signatures inspect at most 512 bytes, while native PHAR detection
 searches for the end of the PHP stub and validates the manifest and stored
 payload bounds. JSON parsing and text validation are linear in the supplied
-byte count. JSON parsing uses stack space proportional to nesting depth; text
-validation uses fixed auxiliary memory.
+byte count. JSON parsing uses auxiliary memory proportional to nesting depth;
+text validation uses fixed auxiliary memory.
 
 ## Provenance
 
