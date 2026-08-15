@@ -96,7 +96,7 @@ go test -run '^$' -bench . -benchmem
 
 The implementation scans at most 512 bytes for fixed signatures. JSON parsing
 and text validation are linear in the supplied byte count. JSON parsing uses
-stack space proportional to nesting depth; text validation uses fixed
+auxiliary memory proportional to nesting depth; text validation uses fixed
 auxiliary memory.
 
 ## Provenance

@@ -93,15 +93,41 @@ func TestInvalidUTF8JSONRetainsUnknownClassification(t *testing.T) {
 func TestJSONNestingDepth(t *testing.T) {
 	t.Parallel()
 
-	input := strings.Repeat("[", jsonMaximumDepth) + "0" +
-		strings.Repeat("]", jsonMaximumDepth)
-	if got := Detect([]byte(input)); got.Format != FormatJSON {
-		t.Fatalf("Detect() = %#v, want JSON at maximum nesting depth", got)
+	tests := []struct {
+		name  string
+		open  string
+		close string
+	}{
+		{name: "arrays", open: "[", close: "]"},
+		{name: "objects", open: `{"value":`, close: "}"},
 	}
 
-	input = "[" + input + "]"
-	if got := Detect([]byte(input)); got.Format == FormatJSON {
-		t.Fatalf("Detect() = %#v, want nesting depth limit to reject JSON", got)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			input := strings.Repeat(test.open, jsonMaximumDepth) + "0" +
+				strings.Repeat(test.close, jsonMaximumDepth)
+			if got := Detect([]byte(input)); got.Format != FormatJSON {
+				t.Fatalf("Detect() = %#v, want JSON at maximum nesting depth", got)
+			}
+
+			input = test.open + input + test.close
+			if got := Detect([]byte(input)); got.Format == FormatJSON {
+				t.Fatalf("Detect() = %#v, want nesting depth limit to reject JSON", got)
+			}
+		})
+	}
+}
+
+func TestJSONInlineNestingDoesNotAllocate(t *testing.T) {
+	input := []byte(strings.Repeat("[", jsonInlineDepth) + "0" +
+		strings.Repeat("]", jsonInlineDepth))
+
+	if allocations := testing.AllocsPerRun(1000, func() {
+		Detect(input)
+	}); allocations != 0 {
+		t.Fatalf("Detect allocated %.2f times for inline JSON nesting", allocations)
 	}
 }
 
