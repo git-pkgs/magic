@@ -1,6 +1,10 @@
 package magic
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+	"unicode/utf8"
+)
 
 func FuzzDetect(f *testing.F) {
 	seeds := [][]byte{
@@ -26,6 +30,12 @@ func FuzzDetect(f *testing.F) {
 		[]byte("<html>"),
 		[]byte("<?xml version=\"1.0\"?>"),
 		[]byte("<svg>"),
+		[]byte(`{"schemaVersion":2}`),
+		[]byte(`[1,"two",false,null]`),
+		[]byte(`"value"`),
+		[]byte(`1e+2`),
+		[]byte(`{"truncated"`),
+		[]byte(`1e+`),
 	}
 	for _, seed := range seeds {
 		f.Add(seed)
@@ -39,10 +49,17 @@ func FuzzDetect(f *testing.F) {
 			t.Fatalf("Detect is not deterministic: %#v then %#v", first, second)
 		}
 		assertResultInvariants(t, first, false, len(data))
+		if got, expect := first.Format == FormatJSON, json.Valid(data) && utf8.Valid(data); got != expect {
+			t.Fatalf("Detect JSON match = %v, want %v for %x", got, expect, data)
+		}
 
 		prefix := DetectPrefix(data)
 		if len(data) > 0 {
 			expectedPrefix := first
+			if parseJSON(data) == jsonIncomplete {
+				expectedPrefix.Format = FormatJSON
+				expectedPrefix.MIME = mimeJSON
+			}
 			if prefix.Reason == ReasonNeedMore {
 				expectedPrefix.Reason = ReasonNeedMore
 			}
@@ -67,6 +84,9 @@ func FuzzDetectPrefix(f *testing.F) {
 		[]byte("\x89PNG\r\n"),
 		[]byte("\x89PNG\r\n\x1a\n"),
 		[]byte("<svg>"),
+		[]byte(`{"schemaVersion":2}`),
+		[]byte(`{"truncated"`),
+		[]byte(`1e+`),
 	}
 	for _, seed := range seeds {
 		f.Add(seed)

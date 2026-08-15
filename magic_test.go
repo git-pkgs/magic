@@ -133,6 +133,7 @@ func TestDetectAllocations(t *testing.T) {
 	inputs := [][]byte{
 		make([]byte, 4096),
 		[]byte("package magic\n"),
+		[]byte(`{"schemaVersion":2}`),
 		[]byte("\xff\xfeh\x00i\x00"),
 		[]byte("\x89PNG\r\n\x1a\n"),
 	}
