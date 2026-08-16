@@ -1,7 +1,9 @@
 package magic
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"unicode/utf8"
 )
@@ -41,6 +43,7 @@ func FuzzDetect(f *testing.F) {
 		f.Add(seed)
 	}
 	f.Add(makeTAR(f))
+	f.Add(makeJSONTARCollision(f))
 
 	f.Fuzz(func(t *testing.T, data []byte) {
 		first := Detect(data)
@@ -49,8 +52,10 @@ func FuzzDetect(f *testing.F) {
 			t.Fatalf("Detect is not deterministic: %#v then %#v", first, second)
 		}
 		assertResultInvariants(t, first, false, len(data))
-		if got, expect := first.Format == FormatJSON, json.Valid(data) && utf8.Valid(data); got != expect {
-			t.Fatalf("Detect JSON match = %v, want %v for %x", got, expect, data)
+		binary, _ := binaryFormat(data)
+		expectJSON := binary == "" && json.Valid(data) && utf8.Valid(data)
+		if got := first.Format == FormatJSON; got != expectJSON {
+			t.Fatalf("Detect JSON match = %v, want %v for %x", got, expectJSON, data)
 		}
 
 		prefix := DetectPrefix(data)
@@ -68,10 +73,37 @@ func FuzzDetect(f *testing.F) {
 			}
 		}
 
-		if format, _ := binaryFormat(data); format != "" && prefix != first {
+		if binary != "" && prefix != first {
 			t.Fatalf("terminal binary signature changed for prefix: %#v, complete: %#v", prefix, first)
 		}
 	})
+}
+
+func makeJSONTARCollision(t testing.TB) []byte {
+	t.Helper()
+
+	data := bytes.Repeat([]byte{'a'}, sniffLength)
+	data[0] = '"'
+	data[len(data)-1] = '"'
+	copy(data[tarMagicOffset:tarMagicEnd], "ustar ")
+
+	checksum := 0
+	for index, value := range data {
+		if index >= tarChecksumFrom && index < tarChecksumTo {
+			checksum += ' '
+		} else {
+			checksum += int(value)
+		}
+	}
+	copy(data[tarChecksumFrom:tarChecksumTo], fmt.Sprintf("%06o  ", checksum))
+
+	if !json.Valid(data) {
+		t.Fatal("JSON/TAR fixture is not valid JSON")
+	}
+	if format, _ := binaryFormat(data); format != FormatTAR {
+		t.Fatalf("JSON/TAR fixture format = %q, want %q", format, FormatTAR)
+	}
+	return data
 }
 
 func FuzzDetectPrefix(f *testing.F) {
