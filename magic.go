@@ -48,6 +48,7 @@ const (
 	FormatSVG   = "svg"
 	FormatZIP   = "zip"
 	FormatTAR   = "tar"
+	FormatPHAR  = "phar"
 	FormatGZIP  = "gzip"
 	FormatBZIP2 = "bzip2"
 	FormatXZ    = "xz"
@@ -71,6 +72,7 @@ const (
 	mimeSVG   = "image/svg+xml"
 	mimeZIP   = "application/zip"
 	mimeTAR   = "application/x-tar"
+	mimePHAR  = "application/x-phar"
 	mimeGZIP  = "application/gzip"
 	mimeBZIP2 = "application/x-bzip2"
 	mimeXZ    = "application/x-xz"
@@ -108,7 +110,8 @@ func DetectPrefix(prefix []byte) Result {
 }
 
 func detect(data []byte, prefix bool) Result {
-	if format, mime := binaryFormat(data); format != "" {
+	format, mime, binaryNeedsMore := binaryFormatState(data)
+	if format != "" {
 		return Result{
 			Kind:   KindBinary,
 			MIME:   mime,
@@ -116,7 +119,7 @@ func detect(data []byte, prefix bool) Result {
 		}
 	}
 
-	format, mime := textFormat(data)
+	format, mime = textFormat(data)
 	result := classifyText(data)
 	if format != "" {
 		result.Format = format
@@ -126,7 +129,7 @@ func detect(data []byte, prefix bool) Result {
 		result.MIME = mimeText
 	}
 
-	if prefix && prefixResultCanChange(result, len(data)) {
+	if prefix && (binaryNeedsMore || prefixResultCanChange(result, len(data))) {
 		result.Reason = ReasonNeedMore
 	}
 
@@ -135,7 +138,8 @@ func detect(data []byte, prefix bool) Result {
 
 func prefixResultCanChange(result Result, inputLength int) bool {
 	if result.Kind == KindBinary {
-		// sniffLength is also the furthest offset read by a binary signature.
+		// Fixed-offset binary signatures are final once the sniff window is
+		// present. Incomplete PHAR validation is handled before this function.
 		return inputLength < sniffLength
 	}
 	return true

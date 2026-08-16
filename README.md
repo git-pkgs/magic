@@ -54,7 +54,7 @@ the exported `Format*` constants rather than string literals.
 
 The format registry contains:
 
-- ZIP, TAR, ar, gzip, bzip2, xz, zstd, PDF, CFBF, PNG, JPEG, and GIF
+- ZIP, TAR, native PHAR, ar, gzip, bzip2, xz, zstd, PDF, CFBF, PNG, JPEG, and GIF
 - ELF, Mach-O (thin and universal), PE/COFF, and WebAssembly
 - plain text, HTML, XML, and SVG
 
@@ -89,9 +89,10 @@ Run the package benchmarks on the target machine:
 go test -run '^$' -bench . -benchmem
 ```
 
-The implementation scans at most 512 bytes for registered signatures. Text
-validation is linear in the supplied byte count and uses fixed auxiliary
-memory.
+Fixed signatures inspect at most 512 bytes, while native PHAR detection
+searches for the end of the PHP stub and validates the manifest and stored
+payload bounds. Text validation is linear in the supplied byte count and uses
+fixed auxiliary memory.
 
 ## Provenance
 

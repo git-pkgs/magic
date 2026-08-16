@@ -10,8 +10,8 @@ package magic
 import "encoding/binary"
 
 const (
-	// sniffLength is the furthest byte inspected by any signature. A binary
-	// rule that reads beyond it must also update prefixResultCanChange.
+	// sniffLength is the furthest byte inspected by a fixed-offset signature.
+	// Native PHAR detection separately locates and validates its manifest.
 	sniffLength     = 512
 	tarMagicOffset  = 257
 	tarMagicEnd     = 263
@@ -55,50 +55,62 @@ var htmlSignatures = [...]string{
 }
 
 func binaryFormat(data []byte) (format, mime string) {
+	format, mime, _ = binaryFormatState(data)
+	return format, mime
+}
+
+func binaryFormatState(data []byte) (format, mime string, needMore bool) {
 	switch {
 	case hasPrefix(data, "PK\x03\x04"),
 		hasPrefix(data, "PK\x05\x06"),
 		hasPrefix(data, "PK\x07\x08"):
-		return FormatZIP, mimeZIP
+		return FormatZIP, mimeZIP, false
 	case hasPrefix(data, "\x1f\x8b\x08"):
-		return FormatGZIP, mimeGZIP
+		return FormatGZIP, mimeGZIP, false
 	case len(data) >= 4 &&
 		hasPrefix(data, "BZh") &&
 		data[3] >= '1' && data[3] <= '9':
-		return FormatBZIP2, mimeBZIP2
+		return FormatBZIP2, mimeBZIP2, false
 	case hasPrefix(data, "\xfd7zXZ\x00"):
-		return FormatXZ, mimeXZ
+		return FormatXZ, mimeXZ, false
 	case hasPrefix(data, "%PDF-"):
-		return FormatPDF, mimePDF
+		return FormatPDF, mimePDF, false
 	case hasPrefix(data, "\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"):
-		return FormatCFBF, mimeCFBF
+		return FormatCFBF, mimeCFBF, false
 	case hasPrefix(data, "\x89PNG\r\n\x1a\n"):
-		return FormatPNG, mimePNG
+		return FormatPNG, mimePNG, false
 	case hasPrefix(data, "\xff\xd8\xff"):
-		return FormatJPEG, mimeJPEG
+		return FormatJPEG, mimeJPEG, false
 	case hasPrefix(data, "GIF87a"), hasPrefix(data, "GIF89a"):
-		return FormatGIF, mimeGIF
+		return FormatGIF, mimeGIF, false
 	case hasPrefix(data, "\x28\xb5\x2f\xfd"):
-		return FormatZstd, mimeZstd
+		return FormatZstd, mimeZstd, false
 	case hasPrefix(data, "\x7fELF"):
-		return FormatELF, mimeELF
+		return FormatELF, mimeELF, false
 	case hasPrefix(data, "\xcf\xfa\xed\xfe"),
 		hasPrefix(data, "\xce\xfa\xed\xfe"),
 		hasPrefix(data, "\xfe\xed\xfa\xcf"),
 		hasPrefix(data, "\xfe\xed\xfa\xce"):
-		return FormatMachO, mimeMachO
+		return FormatMachO, mimeMachO, false
 	case machOFatHeader(data):
-		return FormatMachO, mimeMachO
+		return FormatMachO, mimeMachO, false
 	case hasPrefix(data, "\x00asm"):
-		return FormatWASM, mimeWASM
+		return FormatWASM, mimeWASM, false
 	case hasPrefix(data, "!<arch>\n"):
-		return FormatAR, mimeAR
+		return FormatAR, mimeAR, false
 	case peHeader(data):
-		return FormatPE, mimePE
+		return FormatPE, mimePE, false
 	case validTARHeader(data):
-		return FormatTAR, mimeTAR
+		return FormatTAR, mimeTAR, false
 	default:
-		return "", ""
+		switch nativePHAR(data) {
+		case pharValid:
+			return FormatPHAR, mimePHAR, false
+		case pharIncomplete:
+			return "", "", true
+		default:
+			return "", "", false
+		}
 	}
 }
 
