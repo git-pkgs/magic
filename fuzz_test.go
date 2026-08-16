@@ -31,6 +31,7 @@ func FuzzDetect(f *testing.F) {
 		f.Add(seed)
 	}
 	f.Add(makeTAR(f))
+	f.Add(makeNativePHAR(pharTestStub, "", nil, pharTestEntry{name: "file", content: []byte("data")}))
 
 	f.Fuzz(func(t *testing.T, data []byte) {
 		first := Detect(data)

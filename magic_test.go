@@ -135,6 +135,7 @@ func TestDetectAllocations(t *testing.T) {
 		[]byte("package magic\n"),
 		[]byte("\xff\xfeh\x00i\x00"),
 		[]byte("\x89PNG\r\n\x1a\n"),
+		makeNativePHAR(pharTestStub, "", nil, pharTestEntry{name: "file", content: []byte("data")}),
 	}
 	for _, input := range inputs {
 		if allocations := testing.AllocsPerRun(1000, func() {
