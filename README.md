@@ -56,7 +56,7 @@ The format registry contains:
 
 - ZIP, TAR, ar, gzip, bzip2, xz, zstd, PDF, CFBF, PNG, JPEG, and GIF
 - ELF, Mach-O (thin and universal), PE/COFF, and WebAssembly
-- plain text, HTML, XML, and SVG
+- plain text, JSON, HTML, XML, and SVG
 
 Detection uses bytes only. ZIP-based package types such as JAR, wheel, and
 NuGet remain `zip`, and compressed payloads are not opened. A `CA FE BA BE`
@@ -71,6 +71,11 @@ carriage return, and escape are the permitted C0 controls. Other C0 controls
 classify the input as binary. Invalid UTF-8 without a NUL is unknown with
 `ReasonInvalidText`; callers that need Latin-1 can apply their own fallback.
 
+JSON detection validates the complete input, including arrays and scalar
+top-level values. Surrounding JSON whitespace is accepted. A bounded prefix
+that contains valid or incomplete JSON syntax reports JSON with
+`ReasonNeedMore` because later bytes can complete or invalidate the value.
+
 HTML, XML, and SVG signatures supply format metadata before the shared text
 rules run. The metadata remains present if malformed or control-bearing input
 is classified as unknown or binary.
@@ -78,10 +83,10 @@ is classified as unknown or binary.
 ## Performance
 
 The detector performs no allocations for the supplied fixtures. On an Apple
-M1 Pro with Go 1.26.5, a 4 KiB text input takes about 1.5 microseconds, the
-mixed 4 KiB fixture corpus averages about 0.77 microseconds per call, and a
+M1 Pro with Go 1.26.6, a 4 KiB text input takes about 1.5 microseconds, the
+mixed 4 KiB fixture corpus averages about 2.1 microseconds per call, and a
 1 MiB text input takes about 0.35 milliseconds. Importing and calling the
-package adds 16,640 bytes to a stripped minimal binary.
+package adds about 20 KiB to a stripped minimal binary.
 
 Run the package benchmarks on the target machine:
 
@@ -89,9 +94,10 @@ Run the package benchmarks on the target machine:
 go test -run '^$' -bench . -benchmem
 ```
 
-The implementation scans at most 512 bytes for registered signatures. Text
-validation is linear in the supplied byte count and uses fixed auxiliary
-memory.
+The implementation scans at most 512 bytes for fixed signatures. JSON parsing
+and text validation are linear in the supplied byte count. JSON parsing uses
+auxiliary memory proportional to nesting depth; text validation uses fixed
+auxiliary memory.
 
 ## Provenance
 
