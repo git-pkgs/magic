@@ -46,6 +46,7 @@ const (
 	FormatHTML  = "html"
 	FormatXML   = "xml"
 	FormatSVG   = "svg"
+	FormatJSON  = "json"
 	FormatZIP   = "zip"
 	FormatTAR   = "tar"
 	FormatPHAR  = "phar"
@@ -70,6 +71,7 @@ const (
 	mimeHTML  = "text/html"
 	mimeXML   = "text/xml"
 	mimeSVG   = "image/svg+xml"
+	mimeJSON  = "application/json"
 	mimeZIP   = "application/zip"
 	mimeTAR   = "application/x-tar"
 	mimePHAR  = "application/x-phar"
@@ -120,6 +122,10 @@ func detect(data []byte, prefix bool) Result {
 	}
 
 	format, mime = textFormat(data)
+	if format == "" && isJSON(data, prefix) {
+		format = FormatJSON
+		mime = mimeJSON
+	}
 	result := classifyText(data)
 	if format != "" {
 		result.Format = format
