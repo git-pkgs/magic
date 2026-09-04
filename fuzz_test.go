@@ -54,7 +54,8 @@ func FuzzDetect(f *testing.F) {
 		}
 		assertResultInvariants(t, first, false, len(data))
 		binary, _ := binaryFormat(data)
-		expectJSON := binary == "" && json.Valid(data) && utf8.Valid(data)
+		container := hasJSONContainerPrefix(data)
+		expectJSON := binary == "" && container && json.Valid(data) && utf8.Valid(data)
 		if got := first.Format == FormatJSON; got != expectJSON {
 			t.Fatalf("Detect JSON match = %v, want %v for %x", got, expectJSON, data)
 		}
@@ -62,7 +63,7 @@ func FuzzDetect(f *testing.F) {
 		prefix := DetectPrefix(data)
 		if len(data) > 0 {
 			expectedPrefix := first
-			if parseJSON(data) == jsonIncomplete {
+			if container && parseJSON(data) == jsonIncomplete {
 				expectedPrefix.Format = FormatJSON
 				expectedPrefix.MIME = mimeJSON
 			}
