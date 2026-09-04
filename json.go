@@ -43,8 +43,19 @@ type jsonParser struct {
 }
 
 func isJSON(data []byte, prefix bool) bool {
+	if !hasJSONContainerPrefix(data) {
+		return false
+	}
 	result := parseJSON(data)
 	return result == jsonComplete || prefix && result == jsonIncomplete
+}
+
+func hasJSONContainerPrefix(data []byte) bool {
+	i := 0
+	for i < len(data) && isJSONWhitespace(data[i]) {
+		i++
+	}
+	return i < len(data) && (data[i] == '{' || data[i] == '[')
 }
 
 func parseJSON(data []byte) jsonParseResult {

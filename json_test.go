@@ -14,11 +14,6 @@ func TestJSONDetection(t *testing.T) {
 	}{
 		{name: "object", input: `{"schemaVersion": 2}`},
 		{name: "array", input: `[1, "two", false, null]`},
-		{name: "string", input: `"hello"`},
-		{name: "number", input: `-12.5e+2`},
-		{name: "true", input: `true`},
-		{name: "false", input: `false`},
-		{name: "null", input: `null`},
 		{name: "surrounding whitespace", input: " \t\r\n{\"key\": \"value\"}\n"},
 		{name: "Unicode", input: `{"message":"héllo, 世界","escaped":"\uD834\uDD1E"}`},
 		{name: "escaped characters", input: `["\b\f\n\r\t\/\\\""]`},
@@ -44,6 +39,12 @@ func TestInvalidJSONRetainsExistingClassification(t *testing.T) {
 		name  string
 		input string
 	}{
+		{name: "bare string", input: `"hello"`},
+		{name: "bare number", input: `-12.5e+2`},
+		{name: "bare integer", input: `12345`},
+		{name: "bare true", input: `true`},
+		{name: "bare false", input: `false`},
+		{name: "bare null", input: `null`},
 		{name: "mismatched delimiters", input: `{]`},
 		{name: "whitespace only", input: " \t\r\n"},
 		{name: "missing value", input: `{"key":}`},
@@ -144,16 +145,16 @@ func TestJSONPrefixDetection(t *testing.T) {
 		{name: "truncated object value", input: `{"key":`},
 		{name: "truncated array", input: `[`},
 		{name: "truncated array value", input: `[1,`},
-		{name: "truncated string", input: `"value`},
-		{name: "truncated escape", input: `"value\`},
-		{name: "truncated Unicode escape", input: `"value\u12`},
-		{name: "truncated negative number", input: `-`},
-		{name: "truncated fraction", input: `1.`},
-		{name: "truncated exponent", input: `1e`},
-		{name: "truncated signed exponent", input: `1e+`},
-		{name: "truncated true", input: `tru`},
-		{name: "truncated false", input: `fals`},
-		{name: "truncated null", input: `nul`},
+		{name: "truncated array string", input: `["value`},
+		{name: "truncated array escape", input: `["value\`},
+		{name: "truncated array Unicode escape", input: `["value\u12`},
+		{name: "truncated array number", input: `[-`},
+		{name: "truncated array fraction", input: `[1.`},
+		{name: "truncated array exponent", input: `[1e`},
+		{name: "truncated array signed exponent", input: `[1e+`},
+		{name: "truncated array true", input: `[tru`},
+		{name: "truncated array false", input: `[fals`},
+		{name: "truncated array null", input: `[nul`},
 		{name: "leading whitespace", input: " \n{"},
 	}
 
@@ -179,6 +180,9 @@ func TestInvalidJSONPrefixRetainsExistingClassification(t *testing.T) {
 		input string
 	}{
 		{name: "plain text", input: `package`},
+		{name: "bare number", input: `123`},
+		{name: "bare string", input: `"value`},
+		{name: "bare literal", input: `tru`},
 		{name: "whitespace only", input: " \t\r\n"},
 		{name: "mismatched delimiters", input: `{]`},
 		{name: "trailing comma", input: `[1,]`},
