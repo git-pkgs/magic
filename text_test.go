@@ -26,7 +26,7 @@ func TestTextDecisionTable(t *testing.T) {
 				Kind:     KindText,
 				MIME:     mimeText,
 				Format:   FormatText,
-				Encoding: encodingUTF8,
+				Encoding: EncodingUTF8,
 			},
 		},
 		{
@@ -36,7 +36,7 @@ func TestTextDecisionTable(t *testing.T) {
 				Kind:     KindText,
 				MIME:     mimeText,
 				Format:   FormatText,
-				Encoding: encodingUTF16LE,
+				Encoding: EncodingUTF16LE,
 			},
 		},
 		{
@@ -46,7 +46,7 @@ func TestTextDecisionTable(t *testing.T) {
 				Kind:     KindText,
 				MIME:     mimeText,
 				Format:   FormatText,
-				Encoding: encodingUTF16BE,
+				Encoding: EncodingUTF16BE,
 			},
 		},
 		{
@@ -81,7 +81,7 @@ func TestTextDecisionTable(t *testing.T) {
 				Kind:     KindText,
 				MIME:     mimeText,
 				Format:   FormatText,
-				Encoding: encodingUTF8,
+				Encoding: EncodingUTF8,
 			},
 		},
 		{
@@ -119,7 +119,7 @@ func TestUTF16Validation(t *testing.T) {
 				Kind:     KindText,
 				MIME:     mimeText,
 				Format:   FormatText,
-				Encoding: encodingUTF16LE,
+				Encoding: EncodingUTF16LE,
 			},
 		},
 		{
@@ -129,7 +129,7 @@ func TestUTF16Validation(t *testing.T) {
 				Kind:     KindText,
 				MIME:     mimeText,
 				Format:   FormatText,
-				Encoding: encodingUTF16LE,
+				Encoding: EncodingUTF16LE,
 			},
 		},
 		{
@@ -186,7 +186,7 @@ func TestPlainText(t *testing.T) {
 				Kind:     KindText,
 				MIME:     mimeText,
 				Format:   FormatText,
-				Encoding: encodingUTF8,
+				Encoding: EncodingUTF8,
 			})
 		})
 	}

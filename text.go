@@ -34,7 +34,7 @@ func classifyText(data []byte) Result {
 	if containsDisallowedControlUTF8(data) {
 		return Result{Kind: KindBinary}
 	}
-	return Result{Kind: KindText, Encoding: encodingUTF8}
+	return Result{Kind: KindText, Encoding: EncodingUTF8}
 }
 
 func classifyUTF8BOM(data []byte) Result {
@@ -44,7 +44,7 @@ func classifyUTF8BOM(data []byte) Result {
 	if containsDisallowedControlUTF8(data) {
 		return Result{Kind: KindBinary}
 	}
-	return Result{Kind: KindText, Encoding: encodingUTF8}
+	return Result{Kind: KindText, Encoding: EncodingUTF8}
 }
 
 func classifyUTF16BOM(data []byte, littleEndian bool) Result {
@@ -56,9 +56,9 @@ func classifyUTF16BOM(data []byte, littleEndian bool) Result {
 		return Result{Kind: KindBinary}
 	}
 
-	encoding := encodingUTF16BE
+	encoding := EncodingUTF16BE
 	if littleEndian {
-		encoding = encodingUTF16LE
+		encoding = EncodingUTF16LE
 	}
 	return Result{Kind: KindText, Encoding: encoding}
 }

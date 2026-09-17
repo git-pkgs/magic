@@ -221,7 +221,7 @@ func TestTextFormatRegistryAndPrecedence(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			got := Detect([]byte(test.input))
-			if got.Kind != KindText || got.Encoding != encodingUTF8 ||
+			if got.Kind != KindText || got.Encoding != EncodingUTF8 ||
 				got.Format != test.format || got.MIME != test.mime {
 				t.Fatalf("Detect() = %#v, want text %s %s", got, test.format, test.mime)
 			}
