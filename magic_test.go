@@ -25,7 +25,7 @@ func TestDetectPrefix(t *testing.T) {
 				Kind:     KindText,
 				MIME:     mimeText,
 				Format:   FormatText,
-				Encoding: encodingUTF8,
+				Encoding: EncodingUTF8,
 				Reason:   ReasonNeedMore,
 			},
 		},
@@ -125,7 +125,7 @@ func TestDetectDoesNotRetainInput(t *testing.T) {
 		Kind:     KindText,
 		MIME:     mimeText,
 		Format:   FormatText,
-		Encoding: encodingUTF8,
+		Encoding: EncodingUTF8,
 	})
 }
 

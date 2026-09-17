@@ -49,8 +49,9 @@ mutable package state.
 
 `Kind` is `text`, `binary`, or `unknown`. `Format` and `MIME` describe the
 physical content. `Encoding` is set for accepted UTF-8, UTF-16LE, or UTF-16BE
-text and never appears as a MIME charset parameter. Compare `Format` against
-the exported `Format*` constants rather than string literals.
+text and never appears as a MIME charset parameter. Compare `Format` and
+`Encoding` against the exported `Format*` and `Encoding*` constants rather
+than string literals.
 
 The format registry contains:
 

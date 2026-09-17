@@ -89,10 +89,13 @@ const (
 	mimePE    = "application/vnd.microsoft.portable-executable"
 	mimeWASM  = "application/wasm"
 	mimeAR    = "application/x-archive"
+)
 
-	encodingUTF8    = "utf-8"
-	encodingUTF16LE = "utf-16le"
-	encodingUTF16BE = "utf-16be"
+// Encoding values reported in Result.Encoding.
+const (
+	EncodingUTF8    = "utf-8"
+	EncodingUTF16LE = "utf-16le"
+	EncodingUTF16BE = "utf-16be"
 )
 
 // Detect classifies data as the complete content of a file.

@@ -26,7 +26,7 @@ func TestJSONDetection(t *testing.T) {
 				Kind:     KindText,
 				MIME:     mimeJSON,
 				Format:   FormatJSON,
-				Encoding: encodingUTF8,
+				Encoding: EncodingUTF8,
 			})
 		})
 	}
@@ -70,7 +70,7 @@ func TestInvalidJSONRetainsExistingClassification(t *testing.T) {
 				Kind:     KindText,
 				MIME:     mimeText,
 				Format:   FormatText,
-				Encoding: encodingUTF8,
+				Encoding: EncodingUTF8,
 			})
 		})
 	}
@@ -165,7 +165,7 @@ func TestJSONPrefixDetection(t *testing.T) {
 				Kind:     KindText,
 				MIME:     mimeJSON,
 				Format:   FormatJSON,
-				Encoding: encodingUTF8,
+				Encoding: EncodingUTF8,
 				Reason:   ReasonNeedMore,
 			})
 		})
@@ -199,7 +199,7 @@ func TestInvalidJSONPrefixRetainsExistingClassification(t *testing.T) {
 				Kind:     KindText,
 				MIME:     mimeText,
 				Format:   FormatText,
-				Encoding: encodingUTF8,
+				Encoding: EncodingUTF8,
 				Reason:   ReasonNeedMore,
 			})
 		})
