@@ -110,4 +110,4 @@ contains the source and license details.
 
 ## License
 
-MIT
+[MIT](LICENSE).
