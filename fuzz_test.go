@@ -15,6 +15,8 @@ func FuzzDetect(f *testing.F) {
 		[]byte("\xef\xbb\xbfhello"),
 		[]byte("\xff\xfeh\x00i\x00"),
 		[]byte("\xfe\xff\x00h\x00i"),
+		[]byte("\xff\xfe\x00\x00A\x00\x00\x00"),
+		[]byte("\x00\x00\xfe\xff\x00\x00\x00"),
 		[]byte("\xff\xfe\x01"),
 		[]byte("\xff\xfe\x01\x00"),
 		[]byte{'a', 0, 'b'},
@@ -70,7 +72,10 @@ func FuzzDetect(f *testing.F) {
 			if prefix.Reason == ReasonNeedMore {
 				expectedPrefix.Reason = ReasonNeedMore
 			}
-			if prefix != expectedPrefix {
+			incompleteUnicode := first.Kind == KindUnknown && first.Reason == ReasonInvalidText &&
+				prefix.Reason == ReasonNeedMore &&
+				(prefix.Kind == KindText || prefix.Kind == KindBinary)
+			if prefix != expectedPrefix && !incompleteUnicode {
 				t.Fatalf("DetectPrefix = %#v, incompatible with Detect = %#v", prefix, first)
 			}
 		}
@@ -167,8 +172,10 @@ func assertResultInvariants(t testing.TB, result Result, prefix bool, inputLengt
 	if result.Reason == ReasonNeedMore && !prefix {
 		t.Fatalf("need-more for complete input: %#v", result)
 	}
-	if result.Encoding != "" && result.Kind != KindText {
-		t.Fatalf("encoding set for non-text result: %#v", result)
+	switch result.Encoding {
+	case "", EncodingUTF8, EncodingUTF16LE, EncodingUTF16BE, EncodingUTF32LE, EncodingUTF32BE:
+	default:
+		t.Fatalf("invalid encoding: %#v", result)
 	}
 	if result.Kind == KindText && (result.Format == "" || result.MIME == "") {
 		t.Fatalf("text result lacks metadata: %#v", result)

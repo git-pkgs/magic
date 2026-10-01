@@ -30,7 +30,7 @@ const (
 // Result describes the physical format and text properties of content.
 //
 // MIME never includes a charset parameter. Encoding uses lowercase registered
-// names. Empty fields mean that the corresponding property was not identified.
+// names. A BOM identifies Encoding even when its content is invalid.
 type Result struct {
 	Kind      Kind
 	MIME      string
@@ -96,11 +96,19 @@ const (
 	EncodingUTF8    = "utf-8"
 	EncodingUTF16LE = "utf-16le"
 	EncodingUTF16BE = "utf-16be"
+	EncodingUTF32LE = "utf-32le"
+	EncodingUTF32BE = "utf-32be"
 )
+
+type Options struct {
+	Prefix bool
+	// TextControls permits additional C0 bytes in text. NUL is always rejected.
+	TextControls string
+}
 
 // Detect classifies data as the complete content of a file.
 func Detect(data []byte) Result {
-	return detect(data, false)
+	return DetectWithOptions(data, Options{})
 }
 
 // DetectPrefix classifies an intentionally bounded file prefix.
@@ -108,13 +116,19 @@ func Detect(data []byte) Result {
 // ReasonNeedMore reports that later bytes could change the answer. NeedBytes
 // is reserved for a known minimum total length and is zero in this release.
 func DetectPrefix(prefix []byte) Result {
-	if len(prefix) == 0 {
-		return Result{Kind: KindUnknown, Reason: ReasonNeedMore}
-	}
-	return detect(prefix, true)
+	return DetectWithOptions(prefix, Options{Prefix: true})
 }
 
-func detect(data []byte, prefix bool) Result {
+// DetectWithOptions applies the same control policy to UTF-8 and decoded Unicode.
+// Binary format signatures take precedence over text options.
+func DetectWithOptions(data []byte, options Options) Result {
+	if options.Prefix && len(data) == 0 {
+		return Result{Kind: KindUnknown, Reason: ReasonNeedMore}
+	}
+	return detect(data, options)
+}
+
+func detect(data []byte, options Options) Result {
 	format, mime, binaryNeedsMore := binaryFormatState(data)
 	if format != "" {
 		return Result{
@@ -125,11 +139,11 @@ func detect(data []byte, prefix bool) Result {
 	}
 
 	format, mime = textFormat(data)
-	if format == "" && isJSON(data, prefix) {
+	if format == "" && isJSON(data, options.Prefix) {
 		format = FormatJSON
 		mime = mimeJSON
 	}
-	result := classifyText(data)
+	result := classifyText(data, options)
 	if format != "" {
 		result.Format = format
 		result.MIME = mime
@@ -138,7 +152,7 @@ func detect(data []byte, prefix bool) Result {
 		result.MIME = mimeText
 	}
 
-	if prefix && (binaryNeedsMore || prefixResultCanChange(result, len(data))) {
+	if options.Prefix && (binaryNeedsMore || prefixResultCanChange(result, len(data))) {
 		result.Reason = ReasonNeedMore
 	}
 
