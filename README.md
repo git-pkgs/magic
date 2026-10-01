@@ -58,6 +58,27 @@ This permits backspace, vertical tab, and the DOS end marker in addition to the
 default controls. The same policy applies to UTF-8 and decoded UTF-16 or UTF-32.
 NUL remains binary even if listed, and binary format signatures take precedence.
 
+To validate text while reading a file, write chunks to a `TextValidator`:
+
+```go
+var validator magic.TextValidator
+if _, err := io.Copy(&validator, reader); err != nil {
+    return err
+}
+result := validator.Result(magic.Options{})
+```
+
+The validator uses fixed memory, retains no input buffers, and handles Unicode code
+points and BOMs split across writes. `Result` returns a snapshot without ending
+the stream. Pass `Prefix: true` if reading stopped at a byte limit; incomplete
+trailing code points are then accepted. `TextControls` applies the same policy
+as `DetectWithOptions`, and can be chosen when requesting the result.
+
+`TextValidator` reports `Kind`, `Encoding`, and `Reason`. Format and MIME
+detection remain available through `Detect` and `DetectPrefix`, including for
+binary formats with text-like signatures. Each validator belongs to one stream;
+assign `magic.TextValidator{}` to reuse it for another file.
+
 ## Results
 
 `Kind` is `text`, `binary`, or `unknown`. `Format` and `MIME` describe the
