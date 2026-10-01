@@ -45,11 +45,26 @@ is zero in the first release.
 Both functions are safe for concurrent use. They retain no input and use no
 mutable package state.
 
+For text that uses formatting controls, supply an explicit allowlist:
+
+```go
+result := magic.DetectWithOptions(prefix, magic.Options{
+	Prefix:       true,
+	TextControls: "\b\v\x1a",
+})
+```
+
+This permits backspace, vertical tab, and the DOS end marker in addition to the
+default controls. The same policy applies to UTF-8 and decoded UTF-16 or UTF-32.
+NUL remains binary even if listed, and binary format signatures take precedence.
+
 ## Results
 
 `Kind` is `text`, `binary`, or `unknown`. `Format` and `MIME` describe the
-physical content. `Encoding` is set for accepted UTF-8, UTF-16LE, or UTF-16BE
-text and never appears as a MIME charset parameter. Compare `Format` and
+physical content. `Encoding` identifies UTF-8, UTF-16LE, UTF-16BE, UTF-32LE, or
+UTF-32BE and never appears as a MIME charset parameter. A BOM preserves encoding
+metadata even if the content is malformed or contains disallowed controls;
+check `Kind` before treating it as text. Compare `Format` and
 `Encoding` against the exported `Format*` and `Encoding*` constants rather
 than string literals.
 
@@ -67,10 +82,14 @@ plausible, so Java class files fall through unclassified. PE requires the
 combine the result with filename or domain rules when it needs a semantic
 type.
 
-Text accepts valid UTF-8 and BOM-marked UTF-16. Tab, line feed, form feed,
+Text accepts valid UTF-8 and BOM-marked UTF-16 or UTF-32. Tab, line feed, form feed,
 carriage return, and escape are the permitted C0 controls. Other C0 controls
 classify the input as binary. Invalid UTF-8 without a NUL is unknown with
 `ReasonInvalidText`; callers that need Latin-1 can apply their own fallback.
+
+A prefix ending inside a Unicode code point retains its encoding and reports
+`ReasonNeedMore`. Complete input must contain complete code points. Invalid
+interior sequences remain invalid in both modes.
 
 JSON detection validates the complete input, including arrays and scalar
 top-level values. Surrounding JSON whitespace is accepted. A bounded prefix

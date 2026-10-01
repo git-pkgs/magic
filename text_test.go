@@ -52,22 +52,22 @@ func TestTextDecisionTable(t *testing.T) {
 		{
 			name:   "malformed UTF-8 BOM text",
 			input:  []byte("\xef\xbb\xbf\xff"),
-			expect: Result{Kind: KindUnknown, Reason: ReasonInvalidText},
+			expect: Result{Kind: KindUnknown, Encoding: EncodingUTF8, Reason: ReasonInvalidText},
 		},
 		{
 			name:   "malformed UTF-16 has precedence over control",
 			input:  []byte("\xff\xfe\x01"),
-			expect: Result{Kind: KindUnknown, Reason: ReasonInvalidText},
+			expect: Result{Kind: KindUnknown, Encoding: EncodingUTF16LE, Reason: ReasonInvalidText},
 		},
 		{
 			name:   "BOM text with disallowed control",
 			input:  []byte("\xff\xfe\x01\x00"),
-			expect: Result{Kind: KindBinary},
+			expect: Result{Kind: KindBinary, Encoding: EncodingUTF16LE},
 		},
 		{
 			name:   "UTF-8 BOM text with disallowed control",
 			input:  []byte("\xef\xbb\xbf\x01"),
-			expect: Result{Kind: KindBinary},
+			expect: Result{Kind: KindBinary, Encoding: EncodingUTF8},
 		},
 		{
 			name:   "NUL without UTF-16 BOM",
@@ -135,27 +135,27 @@ func TestUTF16Validation(t *testing.T) {
 		{
 			name:   "unpaired high surrogate",
 			input:  []byte("\xff\xfe\x3d\xd8"),
-			expect: Result{Kind: KindUnknown, Reason: ReasonInvalidText},
+			expect: Result{Kind: KindUnknown, Encoding: EncodingUTF16LE, Reason: ReasonInvalidText},
 		},
 		{
 			name:   "high surrogate followed by ordinary unit",
 			input:  []byte("\xff\xfe\x3d\xd8A\x00"),
-			expect: Result{Kind: KindUnknown, Reason: ReasonInvalidText},
+			expect: Result{Kind: KindUnknown, Encoding: EncodingUTF16LE, Reason: ReasonInvalidText},
 		},
 		{
 			name:   "unpaired low surrogate",
 			input:  []byte("\xfe\xff\xde\x00"),
-			expect: Result{Kind: KindUnknown, Reason: ReasonInvalidText},
+			expect: Result{Kind: KindUnknown, Encoding: EncodingUTF16BE, Reason: ReasonInvalidText},
 		},
 		{
-			name:   "UTF-32LE is binary",
+			name:   "UTF-32LE text",
 			input:  []byte("\xff\xfe\x00\x00A\x00\x00\x00"),
-			expect: Result{Kind: KindBinary},
+			expect: Result{Kind: KindText, Format: FormatText, MIME: mimeText, Encoding: EncodingUTF32LE},
 		},
 		{
-			name:   "UTF-32BE is binary",
+			name:   "UTF-32BE text",
 			input:  []byte("\x00\x00\xfe\xff\x00\x00\x00A"),
-			expect: Result{Kind: KindBinary},
+			expect: Result{Kind: KindText, Format: FormatText, MIME: mimeText, Encoding: EncodingUTF32BE},
 		},
 	}
 
