@@ -12,6 +12,7 @@ func FuzzDetect(f *testing.F) {
 	seeds := [][]byte{
 		nil,
 		[]byte("hello\n"),
+		[]byte(lfsTestPointer),
 		[]byte("\xef\xbb\xbfhello"),
 		[]byte("\xff\xfeh\x00i\x00"),
 		[]byte("\xfe\xff\x00h\x00i"),
@@ -69,6 +70,9 @@ func FuzzDetect(f *testing.F) {
 				expectedPrefix.Format = FormatJSON
 				expectedPrefix.MIME = mimeJSON
 			}
+			if first.Format == FormatText && isLFSPointer(data, true) {
+				expectedPrefix.Format = FormatLFSPointer
+			}
 			if prefix.Reason == ReasonNeedMore {
 				expectedPrefix.Reason = ReasonNeedMore
 			}
@@ -117,6 +121,8 @@ func FuzzDetectPrefix(f *testing.F) {
 	seeds := [][]byte{
 		nil,
 		[]byte("hello"),
+		[]byte(lfsTestPointer),
+		[]byte(lfsTestVersion + "oid sha256:4d7a"),
 		[]byte("\xef\xbb"),
 		[]byte("\xff\xfeh"),
 		[]byte("PK\x03"),

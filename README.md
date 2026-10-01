@@ -72,7 +72,7 @@ The format registry contains:
 
 - ZIP, TAR, native PHAR, ar, gzip, bzip2, xz, zstd, PDF, CFBF, PNG, JPEG, and GIF
 - ELF, Mach-O (thin and universal), PE/COFF, and WebAssembly
-- plain text, JSON, HTML, XML, and SVG
+- plain text, Git LFS pointers, JSON, HTML, XML, and SVG
 
 Detection uses bytes only. ZIP-based package types such as JAR, wheel, and
 NuGet remain `zip`, and compressed payloads are not opened. A `CA FE BA BE`
@@ -99,6 +99,12 @@ that contains valid or incomplete JSON syntax reports JSON with
 HTML, XML, and SVG signatures supply format metadata before the shared text
 rules run. The metadata remains present if malformed or control-bearing input
 is classified as unknown or binary.
+
+Git LFS pointers report `FormatLFSPointer` with kind `text`, MIME `text/plain`,
+and UTF-8 encoding. Detection checks the required fields, key order, and the
+1024-byte size limit, including unknown extension keys. Valid partial pointers
+report the same format with `ReasonNeedMore`; malformed pointers fall back to
+ordinary text classification.
 
 ## Performance
 

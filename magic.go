@@ -42,28 +42,29 @@ type Result struct {
 
 // Format values reported in Result.Format.
 const (
-	FormatText  = "text"
-	FormatHTML  = "html"
-	FormatXML   = "xml"
-	FormatSVG   = "svg"
-	FormatJSON  = "json"
-	FormatZIP   = "zip"
-	FormatTAR   = "tar"
-	FormatPHAR  = "phar"
-	FormatGZIP  = "gzip"
-	FormatBZIP2 = "bzip2"
-	FormatXZ    = "xz"
-	FormatZstd  = "zstd"
-	FormatPDF   = "pdf"
-	FormatCFBF  = "cfbf"
-	FormatPNG   = "png"
-	FormatJPEG  = "jpeg"
-	FormatGIF   = "gif"
-	FormatELF   = "elf"
-	FormatMachO = "mach-o"
-	FormatPE    = "pe"
-	FormatWASM  = "wasm"
-	FormatAR    = "ar"
+	FormatLFSPointer = "git-lfs-pointer"
+	FormatText       = "text"
+	FormatHTML       = "html"
+	FormatXML        = "xml"
+	FormatSVG        = "svg"
+	FormatJSON       = "json"
+	FormatZIP        = "zip"
+	FormatTAR        = "tar"
+	FormatPHAR       = "phar"
+	FormatGZIP       = "gzip"
+	FormatBZIP2      = "bzip2"
+	FormatXZ         = "xz"
+	FormatZstd       = "zstd"
+	FormatPDF        = "pdf"
+	FormatCFBF       = "cfbf"
+	FormatPNG        = "png"
+	FormatJPEG       = "jpeg"
+	FormatGIF        = "gif"
+	FormatELF        = "elf"
+	FormatMachO      = "mach-o"
+	FormatPE         = "pe"
+	FormatWASM       = "wasm"
+	FormatAR         = "ar"
 )
 
 const (
@@ -150,6 +151,9 @@ func detect(data []byte, options Options) Result {
 	} else if result.Kind == KindText {
 		result.Format = FormatText
 		result.MIME = mimeText
+		if result.Encoding == EncodingUTF8 && isLFSPointer(data, options.Prefix) {
+			result.Format = FormatLFSPointer
+		}
 	}
 
 	if options.Prefix && (binaryNeedsMore || prefixResultCanChange(result, len(data))) {
