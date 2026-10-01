@@ -5,6 +5,7 @@ import "bytes"
 const (
 	lfsPointerLimit = 1024
 	lfsHashLength   = 64
+	lfsSizeMax      = "9223372036854775807"
 )
 
 type lfsPointer struct {
@@ -43,6 +44,7 @@ func validLFSVersion(line []byte, partial bool) bool {
 	for _, version := range [...]string{
 		"version https://git-lfs.github.com/spec/v1",
 		"version https://hawser.github.com/spec/v1",
+		"version http://git-media.io/v/2",
 	} {
 		if bytes.Equal(line, []byte(version)) || partial && bytes.HasPrefix([]byte(version), line) {
 			return true
@@ -131,5 +133,7 @@ func validLFSSize(value []byte, partial bool) bool {
 			return false
 		}
 	}
-	return true
+	// Leading zeros are rejected above, so equal lengths compare numerically.
+	return len(value) < len(lfsSizeMax) ||
+		len(value) == len(lfsSizeMax) && bytes.Compare(value, []byte(lfsSizeMax)) <= 0
 }

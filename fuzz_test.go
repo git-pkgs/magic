@@ -70,7 +70,7 @@ func FuzzDetect(f *testing.F) {
 				expectedPrefix.Format = FormatJSON
 				expectedPrefix.MIME = mimeJSON
 			}
-			if prefix.Format == FormatLFSPointer {
+			if first.Format == FormatText && isLFSPointer(data, true) {
 				expectedPrefix.Format = FormatLFSPointer
 			}
 			if prefix.Reason == ReasonNeedMore {

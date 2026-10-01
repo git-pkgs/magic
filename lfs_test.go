@@ -18,6 +18,8 @@ func TestLFSPointerDetection(t *testing.T) {
 		lfsTestPointer,
 		lfsTestVersion + lfsTestOID + "size 0\n",
 		strings.Replace(lfsTestPointer, "git-lfs", "hawser", 1),
+		strings.Replace(lfsTestPointer, "https://git-lfs.github.com/spec/v1", "http://git-media.io/v/2", 1),
+		lfsTestVersion + lfsTestOID + "size " + lfsSizeMax + "\n",
 		lfsTestVersion + "ext-0-custom sha256:abc\n" + lfsTestOID + "size 12345\n",
 		lfsTestVersion + "a.b-2 世界 with spaces\n" + lfsTestOID + "other value\nsize 1\nz value\n",
 		lfsTestPointer + "z \n",
@@ -57,6 +59,8 @@ func TestInvalidLFSPointers(t *testing.T) {
 		"noninteger size":      strings.Replace(lfsTestPointer, "12345", "one", 1),
 		"empty size":           strings.Replace(lfsTestPointer, "12345", "", 1),
 		"size leading zero":    strings.Replace(lfsTestPointer, "12345", "01", 1),
+		"size past int64":      strings.Replace(lfsTestPointer, "12345", "9223372036854775808", 1),
+		"size extra digit":     strings.Replace(lfsTestPointer, "12345", "92233720368547758070", 1),
 		"size trailing space":  strings.Replace(lfsTestPointer, "12345", "1 ", 1),
 		"out of order":         lfsTestVersion + "size 1\n" + lfsTestOID,
 		"missing oid":          lfsTestVersion + "size 1\n",
@@ -95,6 +99,7 @@ func TestLFSPointerPrefixes(t *testing.T) {
 	inputs := []string{
 		lfsTestPointer,
 		strings.Replace(lfsTestPointer, "git-lfs", "hawser", 1),
+		strings.Replace(lfsTestPointer, "https://git-lfs.github.com/spec/v1", "http://git-media.io/v/2", 1),
 		lfsTestVersion + "a.b-2 世界\n" + lfsTestOID + "oid-extra value\nsize 0\nsize-extra value\n",
 	}
 	for _, input := range inputs {
@@ -128,6 +133,7 @@ func TestInvalidLFSPointerPrefixes(t *testing.T) {
 		lfsTestVersion + lfsTestOID + "size -",
 		lfsTestVersion + lfsTestOID + "size 01",
 		lfsTestVersion + lfsTestOID + "size 1.",
+		lfsTestVersion + lfsTestOID + "size 9223372036854775808",
 		lfsTestPointer + "a",
 		lfsTestPointer + "z value\r",
 		lfsTestPointer + "z " + strings.Repeat("x", 1024-len(lfsTestPointer)-2),
@@ -166,6 +172,7 @@ func TestLFSPointerAllocations(t *testing.T) {
 	inputs := [][]byte{
 		[]byte(lfsTestPointer),
 		[]byte(lfsTestVersion + "ext-0-custom value\n" + lfsTestOID + "size 1\n"),
+		[]byte(lfsTestVersion + lfsTestOID + "size " + lfsSizeMax + "\n"),
 		bytes.TrimSuffix([]byte(lfsTestPointer), []byte{'\n'}),
 	}
 	for _, input := range inputs {
