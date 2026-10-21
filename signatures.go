@@ -33,6 +33,8 @@ const (
 	// architectures.
 	machOFatHeaderLen = 8
 	machOFatArchLimit = 40
+	classHeaderLen    = 10
+	classMinMajor     = 45
 )
 
 var htmlSignatures = [...]string{
@@ -94,6 +96,8 @@ func binaryFormatState(data []byte) (format, mime string, needMore bool) {
 		return FormatMachO, mimeMachO, false
 	case machOFatHeader(data):
 		return FormatMachO, mimeMachO, false
+	case javaClassHeader(data):
+		return FormatJavaClass, mimeJavaClass, false
 	case hasPrefix(data, "\x00asm"):
 		return FormatWASM, mimeWASM, false
 	case hasPrefix(data, "!<arch>\n"):
@@ -112,6 +116,14 @@ func binaryFormatState(data []byte) (format, mime string, needMore bool) {
 			return "", "", false
 		}
 	}
+}
+
+func javaClassHeader(data []byte) bool {
+	if len(data) < classHeaderLen || !hasPrefix(data, "\xca\xfe\xba\xbe") {
+		return false
+	}
+	return binary.BigEndian.Uint16(data[6:8]) >= classMinMajor &&
+		binary.BigEndian.Uint16(data[8:classHeaderLen]) > 0
 }
 
 func machOFatHeader(data []byte) bool {

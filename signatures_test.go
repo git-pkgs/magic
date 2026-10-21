@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"fmt"
+	"os"
 	"testing"
 )
 
@@ -57,6 +58,45 @@ func TestBinaryFormatRegistry(t *testing.T) {
 				Format: test.format,
 			})
 		})
+	}
+}
+
+func TestJavaClassDetection(t *testing.T) {
+	t.Parallel()
+	class, err := os.ReadFile("testdata/InventoryExample.class")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, detect := range []func([]byte) Result{Detect, DetectPrefix} {
+		got := detect(class)
+		if got.Format != FormatJavaClass || got.MIME != mimeJavaClass || got.Kind != KindBinary || got.Reason != ReasonNone {
+			t.Fatalf("compiled class: %#v", got)
+		}
+	}
+	for length := 0; length < classHeaderLen; length++ {
+		got := DetectPrefix(class[:length])
+		if got.Format == FormatJavaClass || got.Reason != ReasonNeedMore {
+			t.Fatalf("prefix length %d: %#v", length, got)
+		}
+	}
+	for _, data := range [][]byte{
+		[]byte("\xca\xfe\xba\xbe\x00\x00\x00\x02\x00\x01"),
+		[]byte("\xca\xfe\xba\xbf\x00\x00\x00\x02\x00\x01"),
+		[]byte("\xca\xfe\xba\xbe\x00\x00\x00\x34\x00\x00"),
+		[]byte("\xca\xfe\xba\xbe\x00\x00\x00\x2c\x00\x01"),
+	} {
+		if got := Detect(data); got.Format == FormatJavaClass {
+			t.Fatalf("non-class header: %#v", got)
+		}
+	}
+	for _, data := range [][]byte{
+		[]byte("\xca\xfe\xba\xbe\x00\x00\x00\x2d\x00\x01"),
+		[]byte("\xca\xfe\xba\xbe\x00\x03\x00\x2d\x00\x02"),
+		[]byte("\xca\xfe\xba\xbe\xff\xff\x00\x41\x00\x02"),
+	} {
+		if got := Detect(data); got.Format != FormatJavaClass {
+			t.Fatalf("class version: %#v", got)
+		}
 	}
 }
 
