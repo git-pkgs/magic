@@ -92,16 +92,16 @@ than string literals.
 The format registry contains:
 
 - ZIP, TAR, native PHAR, ar, gzip, bzip2, xz, zstd, PDF, CFBF, PNG, JPEG, and GIF
-- ELF, Mach-O (thin and universal), PE/COFF, and WebAssembly
+- ELF, Mach-O (thin and universal), PE/COFF, WebAssembly, and Java class files
 - plain text, Git LFS pointers, JSON, HTML, XML, and SVG
 
 Detection uses bytes only. ZIP-based package types such as JAR, wheel, and
 NuGet remain `zip`, and compressed payloads are not opened. A `CA FE BA BE`
 prefix is reported as Mach-O only when the following architecture count is
-plausible, so Java class files fall through unclassified. PE requires the
-`PE\0\0` signature to be reachable within the first 512 bytes. A caller can
-combine the result with filename or domain rules when it needs a semantic
-type.
+plausible. Java class detection checks the major version and a nonzero constant
+pool count in the ten-byte header. PE requires the `PE\0\0` signature to be
+reachable within the first 512 bytes. A caller can combine the result with
+filename or domain rules when it needs a semantic type.
 
 Text accepts valid UTF-8 and BOM-marked UTF-16 or UTF-32. Tab, line feed, form feed,
 carriage return, and escape are the permitted C0 controls. Other C0 controls
